@@ -1,9 +1,10 @@
-import streamlit as st
-from PIL import Image
+import tkinter as tk
+from tkinter import ttk
+from PIL import Image, ImageTk
 import pyttsx3
 import os
 
-# Inicializa mecanismo de voz (só funciona localmente, não na nuvem)
+# Inicializa o mecanismo de voz
 engine = pyttsx3.init()
 
 # Função para falar
@@ -33,18 +34,55 @@ categorias = {
     ]
 }
 
-# Layout do app
-st.set_page_config(page_title="Comunicador AAC", layout="centered")
-st.title("🗣️ Comunicador com Imagens")
+# Cria a janela
+janela = tk.Tk()
+janela.title("Comunicador com Imagens")
+janela.geometry("600x600")
 
-categoria_escolhida = st.selectbox("Escolha uma categoria:", list(categorias.keys()))
+# Frame para os botões
+frame_botoes = tk.Frame(janela)
+frame_botoes.pack(pady=20)
 
-colunas = st.columns(2)
+# Função para mostrar frases de uma categoria
+def mostrar_categoria(nome_categoria):
+    for widget in frame_botoes.winfo_children():
+        widget.destroy()
 
-for idx, (frase, imagem_path) in enumerate(categorias[categoria_escolhida]):
-    with colunas[idx % 2]:
-        if os.path.exists(imagem_path):
-            imagem = Image.open(imagem_path)
-            st.image(imagem, width=80)
-        if st.button(frase):
-            falar(frase)
+    frases = categorias[nome_categoria]
+
+    for frase, imagem_path in frases:
+        try:
+            imagem = Image.open(imagem_path).resize((64, 64))
+            imagem_tk = ImageTk.PhotoImage(imagem)
+        except:
+            imagem_tk = None
+
+        botao = tk.Button(
+            frame_botoes,
+            text=frase,
+            image=imagem_tk,
+            compound="left",
+            font=("Arial", 14),
+            width=300,
+            height=70,
+            anchor="w",
+            command=lambda f=frase: falar(f)
+        )
+        botao.image = imagem_tk  # Importante manter referência
+        botao.pack(pady=5)
+
+# Menu de categorias
+frame_menu = tk.Frame(janela)
+frame_menu.pack(pady=10)
+
+tk.Label(frame_menu, text="Escolha uma categoria:", font=("Arial", 14)).pack()
+
+for categoria in categorias:
+    botao = tk.Button(frame_menu, text=categoria, font=("Arial", 12),
+                      command=lambda c=categoria: mostrar_categoria(c))
+    botao.pack(side="left", padx=10)
+
+# Mostra a primeira categoria por padrão
+mostrar_categoria("Saudações")
+
+janela.mainloop()
